@@ -12,8 +12,22 @@ const languageSelect = document.getElementById("languageSelect");
 const resultPanel = document.getElementById("resultPanel");
 
 let currentProblem = null;
+let solved = false;
+
+function setBanner(text, type = "info") {
+
+  resultPanel.innerText = text;
+
+  resultPanel.classList.remove("info");
+  resultPanel.classList.remove("ok");
+  resultPanel.classList.remove("error");
+
+  resultPanel.classList.add(type);
+
+}
 
 loadBtn.onclick = async () => {
+
   const id = problemInput.value.trim();
 
   if (!id) return;
@@ -22,40 +36,94 @@ loadBtn.onclick = async () => {
   const data = await res.json();
 
   currentProblem = data;
+  solved = false;
+
+  submitBtn.disabled = false;
+  submitBtn.style.display = "flex";
 
   problemTitle.innerText = data.title;
   problemStatement.innerHTML = data.statement;
 
+  setBanner("Problem loaded. Submit your solution.", "info");
+
   if (window.MathJax) {
     MathJax.typeset();
   }
+
 };
 
 submitBtn.onclick = () => {
+
   if (!currentProblem) {
-    alert("Load a problem first");
-    return;
+    alert("Load a problem first")
+    return
   }
 
-  const code = codeEditor.value;
-  const languageId = languageSelect.value;
+  if (solved) return
 
-  resultPanel.className = "status-banner info";
-  resultPanel.innerText = "Sending to extension...";
+  const code = codeEditor.value
+  const languageId = languageSelect.value
+
+  submitBtn.disabled = true
+
+  setBanner("Sending to extension...", "info")
 
   window.postMessage({
     type: "CF_SUBMIT",
     contestId: currentProblem.contestId,
     problemIndex: currentProblem.index,
     code,
-    languageId,
-  });
-};
+    languageId
+  })
+
+}
 
 window.addEventListener("message", (event) => {
-  if (!event.data) return;
 
-  if (event.data.type === "CF_SUBMIT_RESULT") {
-    resultPanel.innerText = JSON.stringify(event.data, null, 2);
+  if (!event.data) return
+
+  if (event.data.type === "CF_SUBMIT_STATUS") {
+
+    if (event.data.status === "submitted") {
+
+      setBanner(
+        "Submission sent successfully. Waiting for verdict...",
+        "info"
+      )
+
+    }
+
+    if (event.data.status === "finished") {
+
+      const verdict = event.data.verdict
+      const tests = event.data.passedTests
+
+      if (verdict === "Accepted") {
+
+        solved = true
+
+        submitBtn.disabled = true
+
+        submitBtn.style.display = "none"
+
+        setBanner(
+          `Submitted correctly — Verdict: ${verdict}`,
+          "ok"
+        )
+
+      } else {
+
+        submitBtn.disabled = false
+
+        setBanner(
+          `Verdict: ${verdict} (tests passed: ${tests})`,
+          "error"
+        )
+
+      }
+
+    }
+
   }
-});
+
+})
