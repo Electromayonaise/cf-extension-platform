@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>CF Practice</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+
+<script>
+
+window.MathJax = {
+  tex: {
+    inlineMath: [['$$$','$$$']],
+    displayMath: [['$$$$$$','$$$$$$']],
+    processEscapes: true
+  },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] },
+  startup: { typeset: false }
+}
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<header class="topbar">
+
+<div class="topbar-left">
+<span class="logo">CF <span class="logo-accent">Practice</span></span>
+</div>
+
+<div class="topbar-right">
+</div>
+
+</header>
+
+<main class="layout">
+
+<section class="panel panel-problem">
+
+<div class="search-row">
+
+<input
+  id="problemInput"
+  class="input-mono"
+  placeholder="Problem ID (e.g. 1213D2)"
+>
+
+<button
+  id="loadProblemBtn"
+  class="btn-primary"
+>
+Load
+</button>
+
+</div>
+
+<div id="problemTitle" class="problem-title"></div>
+
+<div id="problemStatement" class="cf-statement"></div>
+
+</section>
+
+
+<section class="panel panel-submit">
+
+<div class="submit-block">
+
+<label class="field-label">Language</label>
+
+<select id="languageSelect" class="select-field">
+
+<option value="54">GNU C++17</option>
+<option value="60">GNU C++20</option>
+<option value="31">Python 3</option>
+
+</select>
+
+</div>
+
+
+<div class="submit-block grow">
+
+<label class="field-label">Code</label>
+
+<textarea id="codeEditor" class="code-editor"></textarea>
+
+</div>
+
+
+<button id="submitBtn" class="btn-full btn-submit">
+
+Submit
+
+</button>
+
+
+<div id="resultPanel" class="status-banner info">
+
+Load a problem and submit your solution.
+
+</div>
+
+</section>
+
+</main>
+
+<script src="app.js"></script>
+
+</body>
+
+</html>
