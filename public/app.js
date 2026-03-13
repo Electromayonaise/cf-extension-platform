@@ -32,22 +32,46 @@ loadBtn.onclick = async () => {
 
   if (!id) return;
 
-  const res = await fetch(`/api/problem/${id}`);
-  const data = await res.json();
+  // Disable button and show loading feedback while fetching
+  loadBtn.disabled = true;
+  loadBtn.textContent = "Loading...";
+  setBanner("Loading problem...", "info");
 
-  currentProblem = data;
-  solved = false;
+  try {
 
-  submitBtn.disabled = false;
-  submitBtn.style.display = "flex";
+    const res = await fetch(`/api/problem/${id}`);
+    const data = await res.json();
 
-  problemTitle.innerText = data.title;
-  problemStatement.innerHTML = data.statement;
+    if (data.error) {
+      setBanner(`Error: ${data.error}`, "error");
+      return;
+    }
 
-  setBanner("Problem loaded. Submit your solution.", "info");
+    currentProblem = data;
+    solved = false;
 
-  if (window.MathJax) {
-    MathJax.typeset();
+    submitBtn.disabled = false;
+    submitBtn.style.display = "flex";
+
+    problemTitle.innerText = data.title;
+    problemStatement.innerHTML = data.statement;
+
+    setBanner("Problem loaded. Submit your solution.", "info");
+
+    if (window.MathJax) {
+      MathJax.typeset();
+    }
+
+  } catch (err) {
+
+    setBanner("Failed to load problem. Check the ID and try again.", "error");
+
+  } finally {
+
+    // Always restore the button
+    loadBtn.disabled = false;
+    loadBtn.textContent = "Load";
+
   }
 
 };

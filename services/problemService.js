@@ -1,6 +1,41 @@
 import axios from "axios"
 import * as cheerio from "cheerio"
 
+/*
+  Cache for the two large API responses.
+  These lists rarely change, so we hold them in memory
+  and only re-fetch after CACHE_TTL milliseconds.
+*/
+
+const CACHE_TTL = 10 * 60 * 1000 // 10 minutes
+
+const cache = {
+  problems: { data: null, fetchedAt: 0 },
+  contests: { data: null, fetchedAt: 0 },
+}
+
+async function getCachedProblems() {
+  const now = Date.now()
+  if (cache.problems.data && now - cache.problems.fetchedAt < CACHE_TTL) {
+    return cache.problems.data
+  }
+  const res = await axios.get("https://codeforces.com/api/problemset.problems")
+  cache.problems.data = res.data.result.problems
+  cache.problems.fetchedAt = now
+  return cache.problems.data
+}
+
+async function getCachedContests() {
+  const now = Date.now()
+  if (cache.contests.data && now - cache.contests.fetchedAt < CACHE_TTL) {
+    return cache.contests.data
+  }
+  const res = await axios.get("https://codeforces.com/api/contest.list")
+  cache.contests.data = res.data.result
+  cache.contests.fetchedAt = now
+  return cache.contests.data
+}
+
 function parseProblemId(problemId) {
 
   const urlMatch = problemId.match(/problem\/(\d+)\/([A-Z0-9]+)/i)
@@ -31,14 +66,25 @@ export async function fetchProblem(problemId) {
 
   const { contestId, index } = parseProblemId(problemId)
 
+  const mirrorUrl =
+    `https://mirror.codeforces.com/contest/${contestId}/problem/${index}`
+
   /*
-  obtener metadata desde API
+    Run all three independent fetches in parallel:
+    - Cached problemset metadata
+    - Cached contest list
+    - Problem HTML from mirror
   */
 
-  const apiRes =
-    await axios.get("https://codeforces.com/api/problemset.problems")
+  const [problems, contests, mirrorRes] = await Promise.all([
+    getCachedProblems(),
+    getCachedContests(),
+    axios.get(mirrorUrl),
+  ])
 
-  const problems = apiRes.data.result.problems
+  /*
+  find metadata
+  */
 
   const problemMeta =
     problems.find(p =>
@@ -50,15 +96,10 @@ export async function fetchProblem(problemId) {
   }
 
   /*
-  obtener statement desde mirror
+  parse statement
   */
 
-  const mirrorUrl =
-    `https://mirror.codeforces.com/contest/${contestId}/problem/${index}`
-
-  const res = await axios.get(mirrorUrl)
-
-  const $ = cheerio.load(res.data)
+  const $ = cheerio.load(mirrorRes.data)
 
   const statement = $(".problem-statement")
 
@@ -108,15 +149,7 @@ export async function fetchProblem(problemId) {
 
   }
 
-  /*
-  obtener nombre del contest
-  */
-
-  const contestRes =
-    await axios.get("https://codeforces.com/api/contest.list")
-
-  const contest =
-    contestRes.data.result.find(c => c.id == contestId)
+  const contest = contests.find(c => c.id == contestId)
 
   return {
 
